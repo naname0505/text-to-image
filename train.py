@@ -92,8 +92,13 @@ def main():
     
     for i in range(args.epochs):
         batch_no = 0
+        batch_no_chaeck = 0
+        if i%100 == 0 :
+            print("#################     "+str(100*batch_no_chaeck)+"/"+str(args.epochs)+"     ################")
+            batch_no_chaeck += 1
+
         while batch_no*args.batch_size < loaded_data['data_length']:
-            print("#################     "+str(batch_no)+"     ################")
+            print(str(batch_no)+"$$$$$$$$")
             real_images, wrong_images, caption_vectors, z_noise, image_files = get_training_batch(batch_no, args.batch_size, 
                 args.image_size, args.z_dim, args.caption_vector_length, 'train', args.data_dir, args.data_set, loaded_data)
             
