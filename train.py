@@ -85,9 +85,9 @@ def main():
     
     saver = tf.train.Saver()
     if args.resume_model:
-        print("== Now saving...")
+        print("== Now loading the saved model...")
         saver.restore(sess, args.resume_model)
-    
+    print("== Now loading training data...")
     loaded_data = load_training_data(args.data_dir, args.data_set)
     
     for i in range(args.epochs):
