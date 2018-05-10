@@ -10,7 +10,7 @@ if sys.version_info >= (3,):
 else:
     from urllib.request import urlretrieve
 
-DATA_DIR = 'Data'
+DATA_DIR = '../Data'
 
 
 # http://stackoverflow.com/questions/273192/how-to-check-if-a-directory-exists-and-create-it-if-necessary
@@ -105,8 +105,10 @@ def download_dataset(data_name):
 def main():
     create_data_paths()
     # TODO: make configurable via command-line
+    """
     download_dataset('flowers')
     download_dataset('skipthoughts')
+    """
     download_dataset('nltk_punkt')
     download_dataset('pretrained_model')
     print('Done')

@@ -50,7 +50,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=600,
                        help='Max number of epochs')
 
-    parser.add_argument('--save_every', type=int, default=30,
+    parser.add_argument('--save_every', type=int, default=100,
                        help='Save Model/Samples every x iterations over batches')
 
     parser.add_argument('--resume_model', type=str, default=None,
@@ -87,15 +87,12 @@ def main():
     if args.resume_model:
         print("== Now loading the saved model...")
         saver.restore(sess, args.resume_model)
-    print("== Now loading training data...")
     loaded_data = load_training_data(args.data_dir, args.data_set)
-    
+    print("== Finish loading the training data")
     for i in range(args.epochs):
         batch_no = 0
-        batch_no_chaeck = 0
         if i%100 == 0 :
-            print("#################     "+str(100*batch_no_chaeck)+"/"+str(args.epochs)+"     ################")
-            batch_no_chaeck += 1
+            print("######  "+str(i)+"/"+str(args.epochs)+"  ######")
 
         while batch_no*args.batch_size < loaded_data['data_length']:
             print(str(batch_no)+"$$$$$$$$")
@@ -103,14 +100,18 @@ def main():
                 args.image_size, args.z_dim, args.caption_vector_length, 'train', args.data_dir, args.data_set, loaded_data)
             
             # DISCR UPDATE
-            check_ts = [ checks['d_loss1'] , checks['d_loss2'], checks['d_loss3']]
+            check_ts = [checks['d_loss1'],
+                        checks['d_loss2'],
+                        checks['d_loss3'] ]
+
             _, d_loss, gen, d1, d2, d3 = sess.run([d_optim, loss['d_loss'], outputs['generator']] + check_ts,
-                feed_dict = {
-                    input_tensors['t_real_image'] : real_images,
-                    input_tensors['t_wrong_image'] : wrong_images,
-                    input_tensors['t_real_caption'] : caption_vectors,
-                    input_tensors['t_z'] : z_noise,
-                })
+                                                    feed_dict = {
+                                                            input_tensors['t_real_image'] : real_images,
+                                                            input_tensors['t_wrong_image'] : wrong_images,
+                                                            input_tensors['t_real_caption'] : caption_vectors,
+                                                            input_tensors['t_z'] : z_noise,
+                                                    }
+                                                 )
             
             print("d1", d1)
             print("d2", d2)
@@ -119,21 +120,23 @@ def main():
             
             # GEN UPDATE
             _, g_loss, gen = sess.run([g_optim, loss['g_loss'], outputs['generator']],
-                feed_dict = {
-                    input_tensors['t_real_image'] : real_images,
-                    input_tensors['t_wrong_image'] : wrong_images,
-                    input_tensors['t_real_caption'] : caption_vectors,
-                    input_tensors['t_z'] : z_noise,
-                })
+                                        feed_dict = {
+                                                input_tensors['t_real_image'] : real_images,
+                                                input_tensors['t_wrong_image'] : wrong_images,
+                                                input_tensors['t_real_caption'] : caption_vectors,
+                                                input_tensors['t_z'] : z_noise,
+                                        }
+                                     )
 
             # GEN UPDATE TWICE, to make sure d_loss does not go to 0
             _, g_loss, gen = sess.run([g_optim, loss['g_loss'], outputs['generator']],
-                feed_dict = {
-                    input_tensors['t_real_image'] : real_images,
-                    input_tensors['t_wrong_image'] : wrong_images,
-                    input_tensors['t_real_caption'] : caption_vectors,
-                    input_tensors['t_z'] : z_noise,
-                })
+                                        feed_dict = {
+                                                input_tensors['t_real_image'] : real_images,
+                                                input_tensors['t_wrong_image'] : wrong_images,
+                                                input_tensors['t_real_caption'] : caption_vectors,
+                                                input_tensors['t_z'] : z_noise,
+                                        }
+                                     )
             
             print("LOSSES", d_loss, g_loss, batch_no, i, len(loaded_data['image_list'])/ args.batch_size)
             batch_no += 1
@@ -143,6 +146,7 @@ def main():
                 save_path = saver.save(sess, "Data/Models/latest_model_{}_temp.ckpt".format(args.data_set))
         if i%5 == 0:
             save_path = saver.save(sess, "Data/Models/model_after_{}_epoch_{}.ckpt".format(args.data_set, i))
+    saver.save(sess, "Data/Models/model.ckpt")
 
 def load_training_data(data_dir, data_set):
     if data_set == 'flowers':
