@@ -47,7 +47,7 @@ def main():
     parser.add_argument('--beta1', type=float, default=0.5,
                        help='Momentum for Adam Update')
 
-    parser.add_argument('--epochs', type=int, default=600,
+    parser.add_argument('--epochs', type=int, default=1,
                        help='Max number of epochs')
 
     parser.add_argument('--save_every', type=int, default=100,
