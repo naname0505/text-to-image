@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from os.path import join, isfile
 import re
 import numpy as np
@@ -7,6 +8,7 @@ import pickle
 import argparse
 import skipthoughts
 import h5py
+import time
 # DID NOT TRAIN IT ON MS COCO YET
 def save_caption_vectors_ms_coco(data_dir, split, batch_size):
     meta_data = {}
@@ -46,8 +48,60 @@ def save_caption_vectors_ms_coco(data_dir, split, batch_size):
         print("Batches Done", batch_no, len(ic_data['annotations'])/batch_size)
         batch_no += 1
 
+############################################
+###    For ImageNet 
+############################################
 def save_caption_vectors_ImageNet(data_dir):
-    print("AAA")
+
+    img_dir  = join(data_dir, 'ImageNet/jpg/test')
+    text_dir = join(data_dir, 'ImageNet/text/')
+    
+    print(img_dir)
+    image_files = [f for f in os.listdir(img_dir) if 'JPEG' in f]
+    #print(image_files[300:400])
+    print(len(image_files)) # maybe include 2002 images.
+    image_captions = { img_file : [] for img_file in image_files }
+    #sys.exit()
+    caption_dir = join(data_dir, 'ImageNet/text')
+    """
+    class_dirs = []
+    for i in range(1, 103):
+        class_dir_name = 'class_%.5d'%(i)
+        class_dirs.append( join(caption_dir, class_dir_name))
+    """
+    #for class_dir in class_dirs:
+    caption_files = [f for f in os.listdir(caption_dir) if 'txt' and  not '._' in f]
+    print(len(caption_files))
+    for cap_file in caption_files[0:391]:
+        cap_file = str(cap_file) 
+        _file_full_path = join(text_dir, cap_file)
+        print(_file_full_path)
+        with open(join(text_dir,cap_file), "r+") as f:
+            captions = f.read().split('\n')
+        img_file  = cap_file[0:14] + ".JPEG"
+        #img_file = cap_file[0:14] + ".JPEG"
+        # only 1 captions per image
+        image_captions[img_file] += [cap for cap in captions if len(cap) > 0][0:1]
+
+
+    print("aaaaaaaaaa"+str(len(image_captions)))
+    sys.exit()
+    model = skipthoughts.load_model()
+    encoded_captions = {}
+
+
+    for i, img in enumerate(image_captions):
+        st = time.time()
+        encoded_captions[img] = skipthoughts.encode(model, image_captions[img])
+        print(i, len(image_captions), img)
+        print("Seconds", time.time() - st)
+        
+    
+    h = h5py.File(join(data_dir, 'ImageNet.hdf5'))
+    for key in encoded_captions:
+        h.create_dataset(key, data=encoded_captions[key])
+    h.close()
+
 
 
 def save_caption_vectors_flowers(data_dir):
@@ -70,35 +124,47 @@ def save_caption_vectors_flowers(data_dir):
         caption_files = [f for f in os.listdir(class_dir) if 'txt' in f]
         for cap_file in caption_files:
             cap_file = str(cap_file).replace("._","")
+            #print(cap_file)
             with open(join(class_dir,cap_file)) as f:
                 captions = f.read().split('\n')
             img_file = cap_file[0:11] + ".jpg"
+            
+            #_caption_collections = [cap for cap in captions if len(cap) > 0][0:5]
             # 5 captions per image
-            image_captions[img_file] += [cap for cap in captions if len(cap) > 0][0:5]
-
+            
+            _caption_collections = [cap for cap in captions if len(cap) > 0][0:1]
+            # 1 captions per image
+            
+            
+            # リストの結合
+            image_captions[img_file] += _caption_collections
     print(len(image_captions))
+
 
     model = skipthoughts.load_model()
     encoded_captions = {}
-
 
     for i, img in enumerate(image_captions):
         st = time.time()
         encoded_captions[img] = skipthoughts.encode(model, image_captions[img])
         print(i, len(image_captions), img)
         print("Seconds", time.time() - st)
-        
+    
+
+    print("Finish the task!!!")
+    
     
     h = h5py.File(join(data_dir, 'flower_tv.hdf5'))
     for key in encoded_captions:
         h.create_dataset(key, data=encoded_captions[key])
     h.close()
-            
+    
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--split', type=str, default='train',
                        help='train/val')
-    parser.add_argument('--data_dir', type=str, default='../Data',
+    parser.add_argument('--data_dir', type=str, default='./Data',
                        help='Data directory')
     parser.add_argument('--batch_size', type=int, default=64,
                        help='Batch Size')
@@ -107,12 +173,11 @@ def main():
     args = parser.parse_args()
     
     if args.data_set == 'flowers':
-        os.exit()
         save_caption_vectors_flowers(args.data_dir)
     elif args.data_set == 'ImageNet':    
         save_caption_vectors_ImageNet(args.data_dir)
     else:
-        os.exit()
+        sys.exit()
         save_caption_vectors_ms_coco(args.data_dir, args.split, args.batch_size)
 
 if __name__ == '__main__':

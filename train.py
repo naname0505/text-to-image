@@ -91,7 +91,7 @@ def main():
     print("== Finish loading the training data")
     for i in range(args.epochs):
         batch_no = 0
-        if i%100 == 0 :
+        if i%10 == 0 :
             print("######  "+str(i)+"/"+str(args.epochs)+"  ######")
 
         while batch_no*args.batch_size < loaded_data['data_length']:
