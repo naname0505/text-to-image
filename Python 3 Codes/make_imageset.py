@@ -48,33 +48,44 @@ def save_caption_vectors_ms_coco(data_dir, split, batch_size):
         print("Batches Done", batch_no, len(ic_data['annotations'])/batch_size)
         batch_no += 1
 
+############################################
+###    For ImageNet 
+############################################
 def save_caption_vectors_ImageNet(data_dir):
 
-    img_dir = join(data_dir, 'ImageNet/jpg')
+    img_dir  = join(data_dir, 'ImageNet/jpg/test')
+    text_dir = join(data_dir, 'ImageNet/text/')
+    
     print(img_dir)
-    image_files = [f for f in os.listdir(img_dir) if 'jpg' in f]
+    image_files = [f for f in os.listdir(img_dir) if 'JPEG' in f]
     #print(image_files[300:400])
-    print(len(image_files))
+    print(len(image_files)) # maybe include 2002 images.
     image_captions = { img_file : [] for img_file in image_files }
-
-    caption_dir = join(data_dir, 'flowers/text_c10')
+    #sys.exit()
+    caption_dir = join(data_dir, 'ImageNet/text')
+    """
     class_dirs = []
     for i in range(1, 103):
         class_dir_name = 'class_%.5d'%(i)
         class_dirs.append( join(caption_dir, class_dir_name))
+    """
+    #for class_dir in class_dirs:
+    caption_files = [f for f in os.listdir(caption_dir) if 'txt' and  not '._' in f]
+    print(len(caption_files))
+    for cap_file in caption_files[0:391]:
+        cap_file = str(cap_file) 
+        _file_full_path = join(text_dir, cap_file)
+        print(_file_full_path)
+        with open(join(text_dir,cap_file), "r+") as f:
+            captions = f.read().split('\n')
+        img_file  = cap_file[0:14] + ".JPEG"
+        #img_file = cap_file[0:14] + ".JPEG"
+        # only 1 captions per image
+        image_captions[img_file] += [cap for cap in captions if len(cap) > 0][0:1]
 
-    for class_dir in class_dirs:
-        caption_files = [f for f in os.listdir(class_dir) if 'txt' in f]
-        for cap_file in caption_files:
-            cap_file = str(cap_file).replace("._","")
-            with open(join(class_dir,cap_file)) as f:
-                captions = f.read().split('\n')
-            img_file = cap_file[0:11] + ".jpg"
-            # 5 captions per image
-            image_captions[img_file] += [cap for cap in captions if len(cap) > 0][0:5]
 
-    print(len(image_captions))
-
+    print("aaaaaaaaaa"+str(len(image_captions)))
+    sys.exit()
     model = skipthoughts.load_model()
     encoded_captions = {}
 
@@ -86,7 +97,7 @@ def save_caption_vectors_ImageNet(data_dir):
         print("Seconds", time.time() - st)
         
     
-    h = h5py.File(join(data_dir, 'flower_tv.hdf5'))
+    h = h5py.File(join(data_dir, 'ImageNet.hdf5'))
     for key in encoded_captions:
         h.create_dataset(key, data=encoded_captions[key])
     h.close()
@@ -153,7 +164,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--split', type=str, default='train',
                        help='train/val')
-    parser.add_argument('--data_dir', type=str, default='../Data',
+    parser.add_argument('--data_dir', type=str, default='./Data',
                        help='Data directory')
     parser.add_argument('--batch_size', type=int, default=64,
                        help='Batch Size')
