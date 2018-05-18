@@ -153,12 +153,12 @@ def save_caption_vectors_flowers(data_dir):
 
     print("Finish the task!!!")
     
-    
+    """ 
     h = h5py.File(join(data_dir, 'flower_tv.hdf5'))
     for key in encoded_captions:
         h.create_dataset(key, data=encoded_captions[key])
     h.close()
-    
+    """
 
 def main():
     parser = argparse.ArgumentParser()

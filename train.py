@@ -92,10 +92,8 @@ def main():
     for i in range(args.epochs):
         batch_no = 0
         if i%10 == 0 :
-            print("######  "+str(i)+"/"+str(args.epochs)+"  ######")
 
         while batch_no*args.batch_size < loaded_data['data_length']:
-            print(str(batch_no)+"$$$$$$$$")
             real_images, wrong_images, caption_vectors, z_noise, image_files = get_training_batch(batch_no, args.batch_size, 
                 args.image_size, args.z_dim, args.caption_vector_length, 'train', args.data_dir, args.data_set, loaded_data)
             
@@ -106,10 +104,10 @@ def main():
 
             _, d_loss, gen, d1, d2, d3 = sess.run([d_optim, loss['d_loss'], outputs['generator']] + check_ts,
                                                     feed_dict = {
-                                                            input_tensors['t_real_image'] : real_images,
-                                                            input_tensors['t_wrong_image'] : wrong_images,
+                                                            input_tensors['t_real_image']   : real_images,
+                                                            input_tensors['t_wrong_image']  : wrong_images,
                                                             input_tensors['t_real_caption'] : caption_vectors,
-                                                            input_tensors['t_z'] : z_noise,
+                                                            input_tensors['t_z']            : z_noise,
                                                     }
                                                  )
             
@@ -121,24 +119,24 @@ def main():
             # GEN UPDATE
             _, g_loss, gen = sess.run([g_optim, loss['g_loss'], outputs['generator']],
                                         feed_dict = {
-                                                input_tensors['t_real_image'] : real_images,
-                                                input_tensors['t_wrong_image'] : wrong_images,
+                                                input_tensors['t_real_image']   : real_images,
+                                                input_tensors['t_wrong_image']  : wrong_images,
                                                 input_tensors['t_real_caption'] : caption_vectors,
-                                                input_tensors['t_z'] : z_noise,
+                                                input_tensors['t_z']            : z_noise,
                                         }
                                      )
 
             # GEN UPDATE TWICE, to make sure d_loss does not go to 0
             _, g_loss, gen = sess.run([g_optim, loss['g_loss'], outputs['generator']],
                                         feed_dict = {
-                                                input_tensors['t_real_image'] : real_images,
-                                                input_tensors['t_wrong_image'] : wrong_images,
+                                                input_tensors['t_real_image']   : real_images,
+                                                input_tensors['t_wrong_image']  : wrong_images,
                                                 input_tensors['t_real_caption'] : caption_vectors,
-                                                input_tensors['t_z'] : z_noise,
+                                                input_tensors['t_z']            : z_noise,
                                         }
                                      )
             
-            print("LOSSES", d_loss, g_loss, batch_no, i, len(loaded_data['image_list'])/ args.batch_size)
+            print("LOSSES (D/G)", d_loss,"/", g_loss,"batch_no:", batch_no,"/",len(loaded_data['image_list'])/ args.batch_size, "Ittr:",i)
             batch_no += 1
             if (batch_no % args.save_every) == 0:
                 print("Saving Images, Model")
@@ -166,7 +164,9 @@ def load_training_data(data_dir, data_set):
             'captions' : flower_captions,
             'data_length' : len(training_image_list)
         }
-    
+    elif data_set == "ImageNet":
+        print("create some codes for ImageNet")
+
     else:
         with open(join(data_dir, 'meta_train.pkl')) as f:
             meta_data = pickle.load(f)
@@ -197,7 +197,7 @@ def get_training_batch(batch_no, batch_size, image_size, z_dim,
         with h5py.File( join(data_dir, 'tvs/'+split + '_tv_image_id_' + str(batch_no))) as hf:
             image_ids = np.array(hf.get('tv'))
 
-        real_images = np.zeros((batch_size, 64, 64, 3))
+        real_images  = np.zeros((batch_size, 64, 64, 3))
         wrong_images = np.zeros((batch_size, 64, 64, 3))
         
         image_files = []
@@ -221,7 +221,7 @@ def get_training_batch(batch_no, batch_size, image_size, z_dim,
         return real_images, wrong_images, caption_vectors, z_noise, image_files
 
     if data_set == 'flowers':
-        real_images = np.zeros((batch_size, 64, 64, 3))
+        real_images  = np.zeros((batch_size, 64, 64, 3))
         wrong_images = np.zeros((batch_size, 64, 64, 3))
         captions = np.zeros((batch_size, caption_vector_length))
 
@@ -246,6 +246,13 @@ def get_training_batch(batch_no, batch_size, image_size, z_dim,
 
         z_noise = np.random.uniform(-1, 1, [batch_size, z_dim])
         return real_images, wrong_images, captions, z_noise, image_files
+
+    if data_dir == "ImageNet":
+        real_images  = np.zeros((batch_size, 64, 64, 3))
+        wrong_images = np.zeros((batch_size, 64, 64, 3))
+        captions = np.zeros((batch_size, caption_vector_length))
+        print("create some codes for imageNet")
+
 
 if __name__ == '__main__':
     main()
