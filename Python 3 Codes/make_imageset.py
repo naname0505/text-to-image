@@ -9,6 +9,9 @@ import argparse
 import skipthoughts
 import h5py
 import time
+
+from keras.utils import np_utils
+
 # DID NOT TRAIN IT ON MS COCO YET
 def save_caption_vectors_ms_coco(data_dir, split, batch_size):
     meta_data = {}
@@ -55,8 +58,7 @@ def save_caption_vectors_ImageNet(data_dir):
 
     img_dir  = join(data_dir, 'ImageNet/jpg/test')
     text_dir = join(data_dir, 'ImageNet/text/')
-    
-    print(img_dir)
+    _n_labels = 4096
     image_files = [f for f in os.listdir(img_dir) if 'JPEG' in f]
     #print(image_files[300:400])
     print(len(image_files)) # maybe include 2002 images.
@@ -71,35 +73,37 @@ def save_caption_vectors_ImageNet(data_dir):
     """
     #for class_dir in class_dirs:
     caption_files = [f for f in os.listdir(caption_dir) if 'txt' and  not '._' in f]
-    print(len(caption_files))
-    for cap_file in caption_files[0:391]:
+    print(len(caption_files),"caption files")
+    for cap_file in caption_files:
         cap_file = str(cap_file) 
         _file_full_path = join(text_dir, cap_file)
         print(_file_full_path)
         with open(join(text_dir,cap_file), "r+") as f:
-            captions = f.read().split('\n')
+            captions = filter(None, re.split("[, \-\n:]+",f.read()))
+        _one_hot_list = []
+        for cap in captions:
+            _zeros = np.zeros(_n_labels)
+            _zeros[int(cap)] = 1
+            _one_hot_list.append(_zeros)
+
+        one_hot_from_path_of_fc = np.concatenate([_one_hot_list[0],_one_hot_list[1]],axis=0)
+        _list = []
+        _list.append(one_hot_from_path_of_fc)
+        #print(len(_list))
         img_file  = cap_file[0:14] + ".JPEG"
-        #img_file = cap_file[0:14] + ".JPEG"
-        # only 1 captions per image
-        image_captions[img_file] += [cap for cap in captions if len(cap) > 0][0:1]
-
-
-    print("aaaaaaaaaa"+str(len(image_captions)))
+        #only 1 captions per image
+        image_captions[img_file] += _list
+    """
     sys.exit()
-    model = skipthoughts.load_model()
-    encoded_captions = {}
-
-
     for i, img in enumerate(image_captions):
         st = time.time()
         encoded_captions[img] = skipthoughts.encode(model, image_captions[img])
         print(i, len(image_captions), img)
         print("Seconds", time.time() - st)
-        
-    
+    """ 
     h = h5py.File(join(data_dir, 'ImageNet.hdf5'))
-    for key in encoded_captions:
-        h.create_dataset(key, data=encoded_captions[key])
+    for key in image_captions:
+        h.create_dataset(key, data=image_captions[key])
     h.close()
 
 
@@ -164,7 +168,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--split', type=str, default='train',
                        help='train/val')
-    parser.add_argument('--data_dir', type=str, default='./Data',
+    parser.add_argument('--data_dir', type=str, default='../Data',
                        help='Data directory')
     parser.add_argument('--batch_size', type=int, default=64,
                        help='Batch Size')
