@@ -57,9 +57,10 @@ def main():
                        help='Pre-Trained Model Path, to resume from')
 
     parser.add_argument('--data_set', type=str, default="flowers",
-                       help='Dat set: MS-COCO, flowers')
+                       help='Dat set: ImageNet, MS-COCO, flowers')
 
     args = parser.parse_args()
+    # reference model.py self.options
     model_options = {
         'z_dim' : args.z_dim,
         't_dim' : args.t_dim,
@@ -88,11 +89,10 @@ def main():
         print("== Now loading the saved model...")
         saver.restore(sess, args.resume_model)
     loaded_data = load_training_data(args.data_dir, args.data_set)
+    print(len(loaded_data))
     print("== Finish loading the training data")
     for i in range(args.epochs):
         batch_no = 0
-        if i%10 == 0 :
-
         while batch_no*args.batch_size < loaded_data['data_length']:
             real_images, wrong_images, caption_vectors, z_noise, image_files = get_training_batch(batch_no, args.batch_size, 
                 args.image_size, args.z_dim, args.caption_vector_length, 'train', args.data_dir, args.data_set, loaded_data)
@@ -144,6 +144,10 @@ def main():
                 save_path = saver.save(sess, "Data/Models/latest_model_{}_temp.ckpt".format(args.data_set))
         if i%5 == 0:
             save_path = saver.save(sess, "Data/Models/model_after_{}_epoch_{}.ckpt".format(args.data_set, i))
+    
+    _save_path="Data/Models/"+args.epochs+"_"+args.caption_vector_length+"Captiondims"+"_"
+    if   args.data_set == "flowers"  : _save_path+"model.ckpt"
+    elif args.data_set == "ImageNet" : _save_path+"ImageNet_model.ckpt"
     saver.save(sess, "Data/Models/model.ckpt")
 
 def load_training_data(data_dir, data_set):
@@ -164,8 +168,25 @@ def load_training_data(data_dir, data_set):
             'captions' : flower_captions,
             'data_length' : len(training_image_list)
         }
+
     elif data_set == "ImageNet":
         print("create some codes for ImageNet")
+        h = h5py.File(join(data_dir, 'ImageNet.hdf5'))
+        ImageNet_captions = {}
+        for ds in h.items():
+            ImageNet_captions[ds[0]] = np.array(ds[1])
+        image_list = [key for key in ImageNet_captions]
+        image_list.sort()
+
+        img_75 = int(len(image_list)*0.75)
+        training_image_list = image_list[0:img_75]
+        random.shuffle(training_image_list)
+        
+        return {
+            'image_list'  : training_image_list,
+            'captions'    : ImageNet_captions,
+            'data_length' : len(training_image_list)
+        }
 
     else:
         with open(join(data_dir, 'meta_train.pkl')) as f:
@@ -247,12 +268,31 @@ def get_training_batch(batch_no, batch_size, image_size, z_dim,
         z_noise = np.random.uniform(-1, 1, [batch_size, z_dim])
         return real_images, wrong_images, captions, z_noise, image_files
 
-    if data_dir == "ImageNet":
+    if data_set == "ImageNet":
         real_images  = np.zeros((batch_size, 64, 64, 3))
         wrong_images = np.zeros((batch_size, 64, 64, 3))
         captions = np.zeros((batch_size, caption_vector_length))
-        print("create some codes for imageNet")
+        cnt = 0
+        image_files = []
+        for i in range(batch_no * batch_size, batch_no * batch_size + batch_size):
+            idx = i % len(loaded_data['image_list'])
+            image_file =  join(data_dir, 'ImageNet/jpg/test/'+loaded_data['image_list'][idx])
+            image_array = image_processing.load_image_array(image_file, image_size)
+            real_images[cnt,:,:,:] = image_array
+            
+            # Improve this selection of wrong image
+            wrong_image_id = random.randint(0,len(loaded_data['image_list'])-1)
+            wrong_image_file =  join(data_dir, 'ImageNet/jpg/test/'+loaded_data['image_list'][wrong_image_id])
+            wrong_image_array = image_processing.load_image_array(wrong_image_file, image_size)
+            wrong_images[cnt, :,:,:] = wrong_image_array
 
+            random_caption = 0
+            captions[cnt,:] = loaded_data['captions'][ loaded_data['image_list'][idx] ][ random_caption ][0:caption_vector_length]
+            image_files.append( image_file )
+            cnt += 1
+
+        z_noise = np.random.uniform(-1, 1, [batch_size, z_dim])
+        return real_images, wrong_images, captions, z_noise, image_files
 
 if __name__ == '__main__':
     main()

@@ -29,8 +29,8 @@ class GAN:
 
     def build_model(self):
         img_size = self.options['image_size']
-        t_real_image = tf.placeholder('float32', [self.options['batch_size'],img_size, img_size, 3 ], name = 'real_image')
-        t_wrong_image = tf.placeholder('float32', [self.options['batch_size'],img_size, img_size, 3 ], name = 'wrong_image')
+        t_real_image   = tf.placeholder('float32', [self.options['batch_size'],img_size, img_size, 3 ], name = 'real_image')
+        t_wrong_image  = tf.placeholder('float32', [self.options['batch_size'],img_size, img_size, 3 ], name = 'wrong_image')
         t_real_caption = tf.placeholder('float32', [self.options['batch_size'], self.options['caption_vector_length']], name = 'real_caption_input')
         t_z = tf.placeholder('float32', [self.options['batch_size'], self.options['z_dim']])
 
