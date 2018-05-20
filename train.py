@@ -19,6 +19,11 @@ def main():
 
     parser.add_argument('--t_dim', type=int, default=256,
                        help='Text feature dimension')
+    """
+    =====================================================================================================
+    yokuwakarann nannyanenn 256tte caption vector tono tigai #toha
+    =====================================================================================================
+    """
 
     parser.add_argument('--batch_size', type=int, default=64,
                        help='Batch Size')
@@ -74,6 +79,8 @@ def main():
     
     
     gan = model.GAN(model_options)
+    _save_path="Data/Models/"+str(args.epochs)+"_"+str(args.caption_vector_length)+"CapVecDims"+"_"
+
     print("== finish checking GAN_model_options")
     input_tensors, variables, loss, outputs, checks = gan.build_model()
     print("== finish building GAN_model")
@@ -139,16 +146,16 @@ def main():
             print("LOSSES (D/G)", d_loss,"/", g_loss,"batch_no:", batch_no,"/",len(loaded_data['image_list'])/ args.batch_size, "Ittr:",i)
             batch_no += 1
             if (batch_no % args.save_every) == 0:
-                print("Saving Images, Model")
+                print("Saving Model")
                 save_for_vis(args.data_dir, real_images, gen, image_files)
-                save_path = saver.save(sess, "Data/Models/latest_model_{}_temp.ckpt".format(args.data_set))
+                save_path = saver.save(sess, "Data/Models/"+str(args.data_set)+"/latest_model_{}_temp.ckpt".format(args.data_set))
         if i%5 == 0:
-            save_path = saver.save(sess, "Data/Models/model_after_{}_epoch_{}.ckpt".format(args.data_set, i))
+            save_path = saver.save(sess, "Data/Models/"+str(args.data_set)+"/model_after_{}_epoch_{}.ckpt".format(args.data_set, i))
     
-    _save_path="Data/Models/"+args.epochs+"_"+args.caption_vector_length+"Captiondims"+"_"
-    if   args.data_set == "flowers"  : _save_path+"model.ckpt"
-    elif args.data_set == "ImageNet" : _save_path+"ImageNet_model.ckpt"
-    saver.save(sess, "Data/Models/model.ckpt")
+    #_save_path="Data/Models/"+args.epochs+"_"+args.caption_vector_length+"Captiondims"+"_"
+    if   args.data_set == "flowers"  : _save_model_fullpath = _save_path + "model.ckpt"
+    elif args.data_set == "ImageNet" : _save_model_fullpath = _save_path + "ImageNet_model.ckpt"
+    saver.save(sess, _save_model_fullpath)
 
 def load_training_data(data_dir, data_set):
     if data_set == 'flowers':
