@@ -1,7 +1,0 @@
-WARNING:tensorflow:From /Users/naname/.pyenv/versions/TF/lib/python3.6/site-packages/tensorflow/python/ops/nn_impl.py:667: calling reduce_mean (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
-Instructions for updating:
-keep_dims is deprecated, use keepdims instead
-WARNING:tensorflow:From /Users/naname/.pyenv/versions/TF/lib/python3.6/site-packages/tensorflow/python/util/tf_should_use.py:118: initialize_all_variables (from tensorflow.python.ops.variables) is deprecated and will be removed after 2017-03-02.
-Instructions for updating:
-Use `tf.global_variables_initializer` instead.
-./train.sh: line 5:  5357 Terminated: 15          python train.py --data_set="ImageNet" --epochs=200 --caption_vector_length=8192
